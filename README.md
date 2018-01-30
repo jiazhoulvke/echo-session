@@ -2,6 +2,8 @@
 
 基于[echo](https://github.com/labstack/echo)和[gocache](https://github.com/jiazhoulvke/gocache)的session库。
 
+目前经常更改代码，还不稳定，不建议使用于生产环境。
+
 ```go
 package main
 

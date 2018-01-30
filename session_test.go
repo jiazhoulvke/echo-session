@@ -53,29 +53,30 @@ var (
 type handler struct {
 }
 
+type mySession struct {
+	Session
+	UserID int
+}
+
 func (h *handler) CreateSession(c echo.Context) error {
-	var sess *Session
-	var err error
-	_, err = FindSession(c)
-	if err == nil {
-		return c.String(200, "ERROR: err must not nil")
+	var sess mySession
+	if err := FindSession(c, &sess); err == nil {
+		return c.String(200, "ERROR: error must not nil")
 	}
-	sess, err = GetSession(c)
-	if err != nil {
+	if err := GetSession(c, &sess); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
-
 	sess.Data["answer"] = int(42)
-	defer sess.Save()
+	sess.UserID = 9527
+	if err := Save(&sess); err != nil {
+		return err
+	}
 	return c.String(200, sess.SessionID)
 }
 
 func (h *handler) ChangeSession(c echo.Context) error {
-	if !IsLogOn(c) {
-		return c.String(200, "ERROR:state error,not login")
-	}
-	sess, err := FindSession(c)
-	if err != nil {
+	var sess mySession
+	if err := FindSession(c, &sess); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
 	answer, exists := sess.Data["answer"]
@@ -92,10 +93,14 @@ func (h *handler) ChangeSession(c echo.Context) error {
 	if num != 42 {
 		return c.String(200, fmt.Sprintf("ERROR:answer not 42, is %v", num))
 	}
+	if sess.UserID != 9527 {
+		return c.String(200, fmt.Sprintf("ERROR:UserID not 9527, is %v", sess.UserID))
+	}
 	sess.Data["answer"] = 21
-	sess.Save()
-	sess, err = FindSession(c)
-	if err != nil {
+	if err := Save(&sess); err != nil {
+		return c.String(200, "ERROR:"+err.Error())
+	}
+	if err := FindSession(c, &sess); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
 	if sess.Data["answer"].(float64) != 21 {
@@ -105,15 +110,14 @@ func (h *handler) ChangeSession(c echo.Context) error {
 }
 
 func (h *handler) DeleteSession(c echo.Context) error {
-	sess, err := FindSession(c)
-	if err != nil {
+	var sess mySession
+	if err := FindSession(c, &sess); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
 	if err := sess.Delete(); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
-	_, err = FindSession(c)
-	if err == nil {
+	if err := FindSession(c, &sess); err == nil {
 		return c.String(200, "ERROR:err should not be nil")
 	}
 	return c.String(200, "OK")
@@ -178,12 +182,13 @@ func TestValue(t *testing.T) {
 		req := httptest.NewRequest(echo.POST, "/", nil)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
-		sess, err := New(c)
+		var sess mySession
+		err := New(c, &sess)
 		So(err, ShouldBeNil)
 		So(sess.SessionID, ShouldNotEqual, "")
 		Convey("测试读取不存在的值", func() {
 			for k := range testData {
-				_, ok := sess.Get(k)
+				_, ok := Get(&sess, k)
 				So(ok, ShouldBeFalse)
 			}
 		})
@@ -191,88 +196,88 @@ func TestValue(t *testing.T) {
 		for k, v := range testData {
 			sess.Set(k, v)
 		}
-		So(sess.Save(), ShouldBeNil)
+		So(Save(&sess), ShouldBeNil)
 		Convey("测试读取存在的值", func() {
 			for k, v := range testData {
 				switch k {
 				case "uint8":
-					value, ok := sess.Uint8(k)
+					value, ok := Uint8(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "int8":
-					value, ok := sess.Int8(k)
+					value, ok := Int8(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "uint16":
-					value, ok := sess.Uint16(k)
+					value, ok := Uint16(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "int16":
-					value, ok := sess.Int16(k)
+					value, ok := Int16(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "uint32":
-					value, ok := sess.Uint32(k)
+					value, ok := Uint32(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "int32":
-					value, ok := sess.Int32(k)
+					value, ok := Int32(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "uint":
-					value, ok := sess.Uint(k)
+					value, ok := Uint(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "int":
-					value, ok := sess.Int(k)
+					value, ok := Int(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "uint64":
-					value, ok := sess.Uint64(k)
+					value, ok := Uint64(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "int64":
-					value, ok := sess.Int64(k)
+					value, ok := Int64(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "float32":
-					value, ok := sess.Float32(k)
+					value, ok := Float32(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "float64":
-					value, ok := sess.Float64(k)
+					value, ok := Float64(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "byte":
-					value, ok := sess.Byte(k)
+					value, ok := Byte(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "string":
-					value, ok := sess.String(k)
+					value, ok := String(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "bool":
-					value, ok := sess.Bool(k)
+					value, ok := Bool(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(value, ShouldEqual, v)
 				case "byteslice":
-					value, ok := sess.ByteSlice(k)
+					value, ok := ByteSlice(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(reflect.DeepEqual(v, value), ShouldBeTrue)
 				case "intslice":
-					value, ok := sess.IntSlice(k)
+					value, ok := IntSlice(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(reflect.DeepEqual(v, value), ShouldBeTrue)
 				case "int64slice":
-					value, ok := sess.Int64Slice(k)
+					value, ok := Int64Slice(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(reflect.DeepEqual(v, value), ShouldBeTrue)
 				case "stringslice":
-					value, ok := sess.StringSlice(k)
+					value, ok := StringSlice(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(reflect.DeepEqual(v, value), ShouldBeTrue)
 				case "interfaceslice":
-					value, ok := sess.InterfaceSlice(k)
+					value, ok := InterfaceSlice(&sess, k)
 					So(ok, ShouldBeTrue)
 					So(reflect.DeepEqual(v, value), ShouldBeTrue)
 				}
