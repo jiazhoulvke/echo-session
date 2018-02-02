@@ -43,6 +43,10 @@ var (
 	CookieKey = "_SESSION_ID"
 	//HTTPKey session key
 	HTTPKey = "_SESSION_ID"
+	//CookieDomain cookie域名
+	CookieDomain string
+	//CookiePath cookie path
+	CookiePath string
 	//SessionIDPrefix session id 前缀
 	SessionIDPrefix = "SESSID_"
 	//MaxAge 过期时间，默认为一周
@@ -85,8 +89,16 @@ func New(c echo.Context, sess Sessioner, opts ...Options) error {
 	cookie := http.Cookie{
 		HttpOnly: o.HTTPOnly,
 		MaxAge:   o.MaxAge,
+		Expires:  time.Now().Add(time.Duration(o.MaxAge) * time.Second),
 		Name:     CookieKey,
 		Value:    sess.GetSessionID(),
+		Path:     "/",
+	}
+	if CookieDomain != "" {
+		cookie.Domain = CookieDomain
+	}
+	if CookiePath != "" {
+		cookie.Path = CookiePath
 	}
 	c.SetCookie(&cookie)
 	return nil
