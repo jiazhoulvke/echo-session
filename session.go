@@ -113,10 +113,7 @@ func FindSession(c echo.Context, sess Sessioner) error {
 	if sessionID == "" {
 		return ErrSessionNotFound
 	}
-	if err := storer.Get(sessionID, &sess); err != nil {
-		return err
-	}
-	return nil
+	return storer.Get(sessionID, &sess)
 }
 
 //GetSession 获取session，如果不存在则新建
@@ -137,7 +134,7 @@ func Save(sess Sessioner) error {
 	if storer == nil {
 		return ErrStorerNotInit
 	}
-	return storer.Set(sess.GetSessionID(), sess)
+	return storer.Remember(sess.GetSessionID(), sess, MaxAge)
 }
 
 //Delete delete session

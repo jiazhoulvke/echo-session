@@ -114,7 +114,7 @@ func (h *handler) DeleteSession(c echo.Context) error {
 	if err := FindSession(c, &sess); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
-	if err := sess.Delete(); err != nil {
+	if err := Delete(&sess); err != nil {
 		return c.String(200, "ERROR:"+err.Error())
 	}
 	if err := FindSession(c, &sess); err == nil {
