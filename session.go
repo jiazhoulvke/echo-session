@@ -41,8 +41,10 @@ type Options struct {
 var (
 	//CookieKey session key
 	CookieKey = "_SESSION_ID"
-	//HTTPKey session key
-	HTTPKey = "_SESSION_ID"
+	//FormKey session key
+	FormKey = "_SESSION_ID"
+	//HeaderKey session key
+	HeaderKey = "SessionID"
 	//CookieDomain cookie域名
 	CookieDomain string
 	//CookiePath cookie path
@@ -389,7 +391,10 @@ func ID(c echo.Context) string {
 	if err == nil {
 		sessionID = cookie.Value
 	} else {
-		sessionID = c.FormValue(HTTPKey)
+		sessionID = c.FormValue(FormKey)
+		if sessionID == "" {
+			sessionID = c.Request().Header.Get(HeaderKey)
+		}
 	}
 	return sessionID
 }

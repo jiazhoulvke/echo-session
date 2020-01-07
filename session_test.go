@@ -143,7 +143,7 @@ func TestChangeSession(t *testing.T) {
 	Convey("测试修改Session", t, func() {
 		e := echo.New()
 		values := make(url.Values)
-		values.Set(HTTPKey, mySessionID)
+		values.Set(FormKey, mySessionID)
 		req := httptest.NewRequest(echo.POST, "/", strings.NewReader(values.Encode()))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
 		rec := httptest.NewRecorder()
@@ -161,7 +161,7 @@ func TestDeleteSession(t *testing.T) {
 	Convey("测试删除Session", t, func() {
 		e := echo.New()
 		values := make(url.Values)
-		values.Set(HTTPKey, mySessionID)
+		values.Set(FormKey, mySessionID)
 		req := httptest.NewRequest(echo.POST, "/", strings.NewReader(values.Encode()))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
 		rec := httptest.NewRecorder()
