@@ -12,5 +12,6 @@ require (
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/smartystreets/goconvey v1.6.4
 	golang.org/x/crypto v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
